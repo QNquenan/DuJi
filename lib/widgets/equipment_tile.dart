@@ -14,29 +14,28 @@ class EquipmentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2)),
-          ],
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           child: Row(
             children: [
-              // ── 图标 ──
+              // ── 表情图标 ──
               Container(
                 width: 44, height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.backpack_outlined, color: Colors.black87, size: 22),
+                alignment: Alignment.center,
+                child: Text(equipment.emoji, style: const TextStyle(fontSize: 24)),
               ),
               const SizedBox(width: 14),
               // ── 信息 ──
@@ -45,22 +44,30 @@ class EquipmentTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(equipment.title,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87)),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface)),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.calendar_today, size: 12, color: Colors.grey.shade400),
+                        Icon(Icons.calendar_today, size: 12, color: cs.onSurfaceVariant),
                         const SizedBox(width: 4),
                         Text(equipment.purchaseDateFormatted,
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                       ],
                     ),
                   ],
                 ),
               ),
-              // ── 价格 ──
-              Text('¥${equipment.priceFormatted}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black87)),
+              // ── 价格 + 日均 ──
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('¥${equipment.priceFormatted}',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: cs.onSurface)),
+                  const SizedBox(height: 2),
+                  Text(equipment.dailyAverageFormatted,
+                      style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                ],
+              ),
             ],
           ),
         ),

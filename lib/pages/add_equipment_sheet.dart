@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/equipment.dart';
+import '../utils/input_formatters.dart';
 import '../widgets/date_picker_wheel.dart';
+import '../widgets/emoji_picker_sheet.dart';
 
 /// 添加装备页（全屏页面）
 Future<Equipment?> pushAddEquipmentPage(BuildContext context) {
@@ -24,6 +26,8 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
   final _priceCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   DateTime _purchaseDate = DateTime.now();
+  String _emoji = '📦';
+  String _emojiName = '箱子';
 
   @override
   void dispose() {
@@ -35,7 +39,17 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
 
   Future<void> _pickDate() async {
     final picked = await showDatePickerWheel(context, initialDate: _purchaseDate);
-    if (picked != null) setState(() => _purchaseDate = picked);
+    if (picked != null && mounted) setState(() => _purchaseDate = picked);
+  }
+
+  Future<void> _pickEmoji() async {
+    final option = await showEmojiPicker(context);
+    if (option != null && mounted) {
+      setState(() {
+        _emoji = option.emoji;
+        _emojiName = option.name;
+      });
+    }
   }
 
   void _submit() {
@@ -46,27 +60,54 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
       price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
       purchaseDate: _purchaseDate,
       notes: _notesCtrl.text.trim(),
+      emoji: _emoji,
+      emojiName: _emojiName,
     );
     Navigator.pop(context, equipment);
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text('添加装备',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87)),
+        title: Text('添加装备',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: cs.onSurface)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 20, color: Colors.black87),
+          icon: Icon(Icons.arrow_back_ios, size: 20, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           children: [
+            // ── 表情封面 ──
+            Center(
+              child: GestureDetector(
+                onTap: _pickEmoji,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 80, height: 80,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: cs.outlineVariant),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(_emoji, style: const TextStyle(fontSize: 38)),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(_emojiName,
+                        style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // ── 名称 ──
             _label('名称'),
             const SizedBox(height: 8),
@@ -84,7 +125,7 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
               controller: _priceCtrl,
               hint: '¥ 请输入价格',
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [DigitsOnlyInputFormatter()],
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return '请输入价格';
                 if (double.tryParse(v.trim()) == null) return '请输入有效价格';
@@ -131,27 +172,29 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
   }
 
   Widget _label(String text) {
-    return Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87));
+    final cs = Theme.of(context).colorScheme;
+    return Text(text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cs.onSurface));
   }
 
   Widget _buildDateField() {
+    final cs = Theme.of(context).colorScheme;
     return InkWell(
       onTap: _pickDate,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: cs.outlineVariant),
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_today, size: 18, color: Colors.grey.shade500),
+            Icon(Icons.calendar_today, size: 18, color: cs.onSurfaceVariant),
             const SizedBox(width: 10),
             Text(
               '${_purchaseDate.year}-${_purchaseDate.month.toString().padLeft(2, '0')}-${_purchaseDate.day.toString().padLeft(2, '0')}',
-              style: const TextStyle(fontSize: 15, color: Colors.black87),
+              style: TextStyle(fontSize: 15, color: cs.onSurface),
             ),
           ],
         ),
@@ -167,29 +210,30 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
     String? Function(String?)? validator,
     int maxLines = 1,
   }) {
+    final cs = Theme.of(context).colorScheme;
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       maxLines: maxLines,
-      style: const TextStyle(color: Colors.black87, fontSize: 15),
+      style: TextStyle(color: cs.onSurface, fontSize: 15),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        hintStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Theme.of(context).cardColor,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: BorderSide(color: cs.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: BorderSide(color: cs.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.black, width: 1.5),
+          borderSide: BorderSide(color: cs.primary, width: 1.5),
         ),
       ),
       validator: validator,

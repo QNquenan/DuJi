@@ -54,7 +54,7 @@ class _DatePickerDialogState extends State<_DatePickerDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).dialogTheme.backgroundColor ?? Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       content: SizedBox(
@@ -75,10 +75,10 @@ class _DatePickerDialogState extends State<_DatePickerDialog> {
                     child: Container(
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.symmetric(
-                          horizontal: BorderSide(color: Colors.grey.shade200),
+                          horizontal: BorderSide(color: Theme.of(context).dividerColor),
                         ),
                       ),
                     ),
@@ -87,13 +87,13 @@ class _DatePickerDialogState extends State<_DatePickerDialog> {
                     children: [
                       // 年
                       Expanded(flex: 2, child: _buildWheel(_yearCtrl, _maxYear - _minYear + 1, (i) => '${_minYear + i}', (i) => setState(() => _selectedYear = _minYear + i))),
-                      const Padding(padding: EdgeInsets.only(bottom: 2), child: Text('年', style: TextStyle(fontSize: 15, color: Colors.black87))),
+                      Padding(padding: const EdgeInsets.only(bottom: 2), child: Text('年', style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurface))),
                       // 月
                       Expanded(flex: 1, child: _buildWheel(_monthCtrl, 12, (i) => '${i + 1}', (i) => setState(() => _selectedMonth = i + 1))),
-                      const Padding(padding: EdgeInsets.only(bottom: 2), child: Text('月', style: TextStyle(fontSize: 15, color: Colors.black87))),
+                      Padding(padding: const EdgeInsets.only(bottom: 2), child: Text('月', style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurface))),
                       // 日
                       Expanded(flex: 1, child: _buildWheel(_dayCtrl, _daysInMonth(_selectedYear, _selectedMonth), (i) => '${i + 1}', (i) => setState(() => _selectedDay = i + 1))),
-                      const Padding(padding: EdgeInsets.only(bottom: 2), child: Text('日', style: TextStyle(fontSize: 15, color: Colors.black87))),
+                      Padding(padding: const EdgeInsets.only(bottom: 2), child: Text('日', style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurface))),
                     ],
                   ),
                 ],
@@ -110,8 +110,8 @@ class _DatePickerDialogState extends State<_DatePickerDialog> {
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey.shade200,
-                  foregroundColor: Colors.grey.shade700,
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -124,8 +124,8 @@ class _DatePickerDialogState extends State<_DatePickerDialog> {
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(context, DateTime(_selectedYear, _selectedMonth, _selectedDay)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -158,10 +158,10 @@ class _DatePickerDialogState extends State<_DatePickerDialog> {
         builder: (_, i) => Center(
           child: Text(
             label(i),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: Colors.black,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
