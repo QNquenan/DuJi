@@ -5,7 +5,7 @@ import '../utils/input_formatters.dart';
 import '../widgets/date_picker_wheel.dart';
 import '../widgets/emoji_picker_sheet.dart';
 
-/// 添加装备页（全屏页面）
+/// 添加物品页（全屏页面）
 Future<Equipment?> pushAddEquipmentPage(BuildContext context) {
   return Navigator.push<Equipment>(
     context,
@@ -38,7 +38,10 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePickerWheel(context, initialDate: _purchaseDate);
+    final picked = await showDatePickerWheel(
+      context,
+      initialDate: _purchaseDate,
+    );
     if (picked != null && mounted) setState(() => _purchaseDate = picked);
   }
 
@@ -71,8 +74,14 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: Text('添加装备',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: cs.onSurface)),
+        title: Text(
+          '添加物品',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: cs.onSurface,
+          ),
+        ),
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, size: 20, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
@@ -90,7 +99,8 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
                 child: Column(
                   children: [
                     Container(
-                      width: 80, height: 80,
+                      width: 80,
+                      height: 80,
                       decoration: BoxDecoration(
                         color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(20),
@@ -100,8 +110,13 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
                       child: Text(_emoji, style: const TextStyle(fontSize: 38)),
                     ),
                     const SizedBox(height: 6),
-                    Text(_emojiName,
-                        style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                    Text(
+                      _emojiName,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -113,7 +128,7 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
             const SizedBox(height: 8),
             _buildField(
               controller: _titleCtrl,
-              hint: '请输入装备名称',
+              hint: '请输入物品名称',
               validator: (v) => v == null || v.trim().isEmpty ? '请输入名称' : null,
             ),
             const SizedBox(height: 20),
@@ -143,11 +158,7 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
             // ── 备注 ──
             _label('备注'),
             const SizedBox(height: 8),
-            _buildField(
-              controller: _notesCtrl,
-              hint: '选填，装备备注信息',
-              maxLines: 3,
-            ),
+            _buildField(controller: _notesCtrl, hint: '选填，物品备注信息', maxLines: 3),
             const SizedBox(height: 32),
 
             // ── 添加按钮 ──
@@ -159,10 +170,15 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 0,
                 ),
-                child: const Text('添加', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                child: const Text(
+                  '添加',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],
@@ -173,7 +189,14 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
 
   Widget _label(String text) {
     final cs = Theme.of(context).colorScheme;
-    return Text(text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cs.onSurface));
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: cs.onSurface,
+      ),
+    );
   }
 
   Widget _buildDateField() {
@@ -222,7 +245,10 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
         hintStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
         filled: true,
         fillColor: Theme.of(context).cardColor,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: cs.outlineVariant),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/equipment.dart';
 
-/// 装备列表项组件
+/// 物品列表项组件
 class EquipmentTile extends StatelessWidget {
   final Equipment equipment;
   final VoidCallback onTap;
@@ -29,13 +29,17 @@ class EquipmentTile extends StatelessWidget {
             children: [
               // ── 表情图标 ──
               Container(
-                width: 44, height: 44,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
-                child: Text(equipment.emoji, style: const TextStyle(fontSize: 24)),
+                child: Text(
+                  equipment.emoji,
+                  style: const TextStyle(fontSize: 24),
+                ),
               ),
               const SizedBox(width: 14),
               // ── 信息 ──
@@ -43,15 +47,30 @@ class EquipmentTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(equipment.title,
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                    Text(
+                      equipment.title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.calendar_today, size: 12, color: cs.onSurfaceVariant),
+                        Icon(
+                          Icons.calendar_today,
+                          size: 12,
+                          color: cs.onSurfaceVariant,
+                        ),
                         const SizedBox(width: 4),
-                        Text(equipment.purchaseDateFormatted,
-                            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                        Text(
+                          equipment.purchaseDateFormatted,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -61,11 +80,19 @@ class EquipmentTile extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('¥${equipment.priceFormatted}',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: cs.onSurface)),
+                  Text(
+                    '¥${equipment.priceFormatted}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(equipment.dailyAverageFormatted,
-                      style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                  Text(
+                    equipment.dailyAverageFormatted,
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                  ),
                 ],
               ),
             ],

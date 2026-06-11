@@ -1,4 +1,4 @@
-/// 装备数据模型
+/// 物品数据模型
 class Equipment {
   final String id;
   final String title;

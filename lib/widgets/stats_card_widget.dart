@@ -33,7 +33,7 @@ class StatsCardWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '我的装备',
+            '我的物品',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -45,17 +45,16 @@ class StatsCardWidget extends StatelessWidget {
             children: [
               Expanded(
                 child: _StatColumn(
-                  label: '装备价值',
-                  value: equipmentCount > 0 ? '¥${totalValue.round()}' : '0',
+                  label: '物品价值',
+                  value: equipmentCount > 0 ? '¥${totalValue.round()}' : '¥0',
                 ),
               ),
               Expanded(
-                child: _StatColumn(
-                    label: '装备数量', value: '$equipmentCount'),
+                child: _StatColumn(label: '物品数量', value: '$equipmentCount'),
               ),
               Expanded(
                 child: _StatColumn(
-                  label: '均摊价格',
+                  label: '总日均价格',
                   value: equipmentCount > 0 ? '¥${averagePrice.round()}' : '¥0',
                 ),
               ),
