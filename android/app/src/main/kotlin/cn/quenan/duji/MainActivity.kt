@@ -1,4 +1,4 @@
-package com.example.my_app
+package cn.quenan.duji
 
 import io.flutter.embedding.android.FlutterActivity
 
