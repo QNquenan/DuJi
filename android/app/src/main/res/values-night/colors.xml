@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 小组件配置页（深色模式） -->
+    <color name="config_card_bg">#FF1E1E1E</color>
+    <color name="config_emoji_bg">#FF333333</color>
+    <color name="config_title">#FFFFFFFF</color>
+    <color name="config_subtitle">#FF999999</color>
+    <color name="config_page_bg">#FF121212</color>
+    <color name="config_border">#1AFFFFFF</color>
+</resources>

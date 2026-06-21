@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -7,15 +8,21 @@ enum DisplayMode { list, grid }
 
 enum SortMode { created, purchaseDate }
 
+enum CountdownSortMode { created, eventDate }
+
 class AppSettings {
   final ThemeOption theme;
   final DisplayMode displayMode;
   final SortMode sortMode;
+  final CountdownSortMode countdownSortMode;
+  final bool countdownIncludeStartDay;
 
   const AppSettings({
     this.theme = ThemeOption.light,
     this.displayMode = DisplayMode.list,
     this.sortMode = SortMode.created,
+    this.countdownSortMode = CountdownSortMode.created,
+    this.countdownIncludeStartDay = false,
   });
 
   ThemeMode get themeMode {
@@ -33,17 +40,23 @@ class AppSettings {
     ThemeOption? theme,
     DisplayMode? displayMode,
     SortMode? sortMode,
+    CountdownSortMode? countdownSortMode,
+    bool? countdownIncludeStartDay,
   }) =>
       AppSettings(
         theme: theme ?? this.theme,
         displayMode: displayMode ?? this.displayMode,
         sortMode: sortMode ?? this.sortMode,
+        countdownSortMode: countdownSortMode ?? this.countdownSortMode,
+        countdownIncludeStartDay: countdownIncludeStartDay ?? this.countdownIncludeStartDay,
       );
 
   Map<String, dynamic> toJson() => {
     'theme': theme.name,
     'displayMode': displayMode.name,
     'sortMode': sortMode.name,
+    'countdownSortMode': countdownSortMode.name,
+    'countdownIncludeStartDay': countdownIncludeStartDay,
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -59,6 +72,11 @@ class AppSettings {
       (e) => e.name == json['sortMode'],
       orElse: () => SortMode.created,
     ),
+    countdownSortMode: CountdownSortMode.values.firstWhere(
+      (e) => e.name == json['countdownSortMode'],
+      orElse: () => CountdownSortMode.created,
+    ),
+    countdownIncludeStartDay: json['countdownIncludeStartDay'] as bool? ?? false,
   );
 }
 
@@ -86,17 +104,15 @@ class AppSettingsNotifier extends ValueNotifier<AppSettings> {
   }
 
   static Map<String, dynamic>? _parseJson(String raw) {
-    // 简单解析：{"theme":"system","displayMode":"list","sortMode":"created"}
-    final map = <String, dynamic>{};
-    for (final part in raw.replaceAll(RegExp(r'[{}" ]'), '').split(',')) {
-      final kv = part.split(':');
-      if (kv.length == 2) map[kv[0]] = kv[1];
-    }
-    return map;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+    } catch (_) {}
+    return null;
   }
 
   static String _toJsonString(AppSettings s) {
-    return '{"theme":"${s.theme.name}","displayMode":"${s.displayMode.name}","sortMode":"${s.sortMode.name}"}';
+    return jsonEncode(s.toJson());
   }
 }
 

@@ -14,19 +14,91 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    appSettings.addListener(_onChanged);
+    appSettings.addListener(_onSettingsChanged);
   }
 
   @override
   void dispose() {
-    appSettings.removeListener(_onChanged);
+    appSettings.removeListener(_onSettingsChanged);
     super.dispose();
   }
 
-  void _onChanged() => setState(() {});
+  void _onSettingsChanged() => setState(() {});
 
   Future<void> _update(AppSettings Function(AppSettings) cb) async {
     await appSettings.update(cb(appSettings.value));
+  }
+
+  /// 弹出底部抽屉选择器
+  Future<T?> _showPickerSheet<T>({
+    required List<(T, String)> items,
+    required T currentValue,
+  }) {
+    return showModalBottomSheet<T>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final dcs = Theme.of(ctx).colorScheme;
+        return Container(
+          decoration: BoxDecoration(
+            color: dcs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 36, height: 4,
+                decoration: BoxDecoration(
+                  color: dcs.onSurfaceVariant.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: items.map((item) {
+                    final selected = item.$1 == currentValue;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: InkWell(
+                        onTap: () => Navigator.pop(ctx, item.$1),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? dcs.primary.withValues(alpha: 0.12)
+                                : dcs.surfaceContainerHighest.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: selected
+                                ? Border.all(color: dcs.primary.withValues(alpha: 0.3))
+                                : null,
+                          ),
+                          child: Text(
+                            item.$2,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                              color: selected ? dcs.primary : dcs.onSurface,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -37,11 +109,7 @@ class _SettingsPageState extends State<SettingsPage> {
       appBar: AppBar(
         title: Text(
           '设置',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: cs.onSurface,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: cs.onSurface),
         ),
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, size: 20, color: cs.onSurface),
@@ -51,56 +119,107 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
+          // ── 外观 ──
           _sectionHeader('外观', cs),
           const SizedBox(height: 10),
           _buildCard(
             context,
             children: [
-              _DropdownTile(
+              _SettingTile(
                 icon: Icons.brightness_6_outlined,
                 label: '主题',
-                value: s.theme,
-                items: const [
-                  DropdownMenuItem(
-                    value: ThemeOption.system,
-                    child: Text('跟随系统'),
-                  ),
-                  DropdownMenuItem(value: ThemeOption.light, child: Text('浅色')),
-                  DropdownMenuItem(value: ThemeOption.dark, child: Text('深色')),
-                ],
-                onChanged: (v) => _update((s) => s.copyWith(theme: v)),
+                value: _themeLabel(s.theme),
+                onTap: () async {
+                  final result = await _showPickerSheet<ThemeOption>(
+                    currentValue: s.theme,
+                    items: const [
+                      (ThemeOption.system, '跟随系统'),
+                      (ThemeOption.light, '浅色'),
+                      (ThemeOption.dark, '深色'),
+                    ],
+                  );
+                  if (result != null) _update((s) => s.copyWith(theme: result));
+                },
               ),
               _divider(),
-              _DropdownTile(
+              _SettingTile(
                 icon: Icons.view_module_outlined,
                 label: '显示模式',
-                value: s.displayMode,
-                items: const [
-                  DropdownMenuItem(value: DisplayMode.list, child: Text('列表')),
-                  DropdownMenuItem(value: DisplayMode.grid, child: Text('块状')),
-                ],
-                onChanged: (v) => _update((s) => s.copyWith(displayMode: v)),
-              ),
-              _divider(),
-              _DropdownTile(
-                icon: Icons.sort_outlined,
-                label: '排序方式',
-                value: s.sortMode,
-                items: const [
-                  DropdownMenuItem(
-                    value: SortMode.created,
-                    child: Text('创建时间'),
-                  ),
-                  DropdownMenuItem(
-                    value: SortMode.purchaseDate,
-                    child: Text('购买日期'),
-                  ),
-                ],
-                onChanged: (v) => _update((s) => s.copyWith(sortMode: v)),
+                value: s.displayMode == DisplayMode.list ? '列表' : '块状',
+                onTap: () async {
+                  final result = await _showPickerSheet(
+                    currentValue: s.displayMode,
+                    items: const [
+                      (DisplayMode.list, '列表'),
+                      (DisplayMode.grid, '块状'),
+                    ],
+                  );
+                  if (result != null) _update((s) => s.copyWith(displayMode: result));
+                },
               ),
             ],
           ),
           const SizedBox(height: 28),
+
+          // ── 我的物品 ──
+          _sectionHeader('我的物品', cs),
+          const SizedBox(height: 10),
+          _buildCard(
+            context,
+            children: [
+              _SettingTile(
+                icon: Icons.sort_outlined,
+                label: '排序方式',
+                value: s.sortMode == SortMode.created ? '创建时间' : '购买日期',
+                onTap: () async {
+                  final result = await _showPickerSheet(
+                    currentValue: s.sortMode,
+                    items: const [
+                      (SortMode.created, '创建时间'),
+                      (SortMode.purchaseDate, '购买日期'),
+                    ],
+                  );
+                  if (result != null) _update((s) => s.copyWith(sortMode: result));
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 28),
+
+          // ── 倒数日 ──
+          _sectionHeader('倒数日', cs),
+          const SizedBox(height: 10),
+          _buildCard(
+            context,
+            children: [
+              _SettingTile(
+                icon: Icons.sort_outlined,
+                label: '排序方式',
+                value: s.countdownSortMode == CountdownSortMode.created ? '创建日期' : '事件时间',
+                onTap: () async {
+                  final result = await _showPickerSheet(
+                    currentValue: s.countdownSortMode,
+                    items: const [
+                      (CountdownSortMode.created, '创建日期'),
+                      (CountdownSortMode.eventDate, '事件时间'),
+                    ],
+                  );
+                  if (result != null) _update((s) => s.copyWith(countdownSortMode: result));
+                },
+              ),
+              _divider(),
+              _SwitchTile(
+                icon: Icons.calendar_today,
+                label: '正数包含起始日',
+                subtitle: '开启后正数天数 +1',
+                value: s.countdownIncludeStartDay,
+                onChanged: (v) => _update((s) => s.copyWith(countdownIncludeStartDay: v)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 28),
+
+          // ── 关于 ──
           _sectionHeader('关于', cs),
           const SizedBox(height: 10),
           _buildCard(
@@ -123,6 +242,12 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
   }
+
+  String _themeLabel(ThemeOption t) => switch (t) {
+    ThemeOption.system => '跟随系统',
+    ThemeOption.light => '浅色',
+    ThemeOption.dark => '深色',
+  };
 
   Widget _sectionHeader(String text, ColorScheme cs) => Padding(
     padding: const EdgeInsets.only(left: 4),
@@ -161,13 +286,7 @@ class _SettingsPageState extends State<SettingsPage> {
           Icon(Icons.info_outline, size: 22, color: cs.onSurfaceVariant),
           const SizedBox(width: 14),
           Expanded(
-            child: Text(
-              '关于APP',
-              style: TextStyle(
-                fontSize: 16,
-                color: cs.onSurface,
-              ),
-            ),
+            child: Text('关于APP', style: TextStyle(fontSize: 16, color: cs.onSurface)),
           ),
           Icon(Icons.chevron_right, size: 20, color: cs.onSurfaceVariant),
         ],
@@ -183,68 +302,42 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 }
 
-class _DropdownTile<T> extends StatelessWidget {
+class _SettingTile extends StatelessWidget {
   final IconData icon;
   final String label;
-  final T value;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T> onChanged;
+  final String value;
+  final VoidCallback onTap;
 
-  const _DropdownTile({
+  const _SettingTile({
     required this.icon,
     required this.label,
     required this.value,
-    required this.items,
-    required this.onChanged,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 22, color: cs.onSurfaceVariant),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 15, color: cs.onSurface),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(16),
+        bottom: Radius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: cs.onSurfaceVariant),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(label, style: TextStyle(fontSize: 15, color: cs.onSurface)),
             ),
-          ),
-          SizedBox(
-            height: 36,
-            child: DropdownButtonHideUnderline(
-              child: Theme(
-                data: Theme.of(context).copyWith(
-                  menuTheme: MenuThemeData(
-                    style: MenuStyle(
-                      shape: WidgetStatePropertyAll(
-                        RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                ),
-                child: DropdownButton<T>(
-                  value: value,
-                  isDense: true,
-                  alignment: AlignmentDirectional.centerEnd,
-                  style: TextStyle(fontSize: 14, color: cs.onSurface),
-                  items: items.map((item) {
-                    return DropdownMenuItem<T>(
-                      value: item.value,
-                      child: Center(child: item.child),
-                    );
-                  }).toList(),
-                  onChanged: (v) {
-                    if (v != null) onChanged(v);
-                  },
-                ),
-              ),
-            ),
-          ),
-        ],
+            Text(value, style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant)),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
+          ],
+        ),
       ),
     );
   }
@@ -276,16 +369,58 @@ class _LinkTile extends StatelessWidget {
             Icon(icon, size: 22, color: cs.onSurfaceVariant),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(
-                label,
-                style: TextStyle(fontSize: 15, color: cs.onSurface),
-              ),
+              child: Text(label, style: TextStyle(fontSize: 15, color: cs.onSurface)),
             ),
             trailing,
             const SizedBox(width: 4),
             Icon(Icons.open_in_new, size: 16, color: cs.onSurfaceVariant),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SwitchTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SwitchTile({
+    required this.icon,
+    required this.label,
+    this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 22, color: cs.onSurfaceVariant),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(fontSize: 15, color: cs.onSurface)),
+                if (subtitle != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(subtitle!, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Switch(value: value, onChanged: onChanged),
+        ],
       ),
     );
   }

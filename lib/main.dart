@@ -16,9 +16,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  ThemeMode _lastThemeMode = ThemeMode.light;
+
   @override
   void initState() {
     super.initState();
+    _lastThemeMode = appSettings.value.themeMode;
     appSettings.addListener(_onSettingsChanged);
   }
 
@@ -28,7 +31,13 @@ class _MyAppState extends State<MyApp> {
     super.dispose();
   }
 
-  void _onSettingsChanged() => setState(() {});
+  void _onSettingsChanged() {
+    final mode = appSettings.value.themeMode;
+    if (mode != _lastThemeMode) {
+      _lastThemeMode = mode;
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +130,7 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-/// 自定义页面过渡 — 纯灰阶 SlideTransition，消除 Material 默认粉色
+/// 自定义页面过渡 — SlideTransition + FadeTransition，GPU 合成
 class _NoPinkTransitionBuilder extends PageTransitionsBuilder {
   const _NoPinkTransitionBuilder();
 
@@ -133,12 +142,17 @@ class _NoPinkTransitionBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(1.0, 0.0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-      child: child,
+    return FadeTransition(
+      opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(parent: animation, curve: const Interval(0.0, 0.3, curve: Curves.easeOut)),
+      ),
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(1.0, 0.0),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+        child: child,
+      ),
     );
   }
 }

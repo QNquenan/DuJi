@@ -25,6 +25,43 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <!-- 我的物品桌面小组件 -->
+        <receiver
+            android:name=".EquipmentWidgetProvider"
+            android:exported="true"
+            android:label="我的物品">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/equipment_widget_info" />
+        </receiver>
+
+        <!-- 倒数日桌面小组件 -->
+        <receiver
+            android:name=".CountdownWidgetProvider"
+            android:exported="true"
+            android:label="倒数日">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/countdown_widget_info" />
+        </receiver>
+
+        <!-- 倒数日小组件配置页面 -->
+        <activity
+            android:name=".CountdownWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/WidgetConfigTheme"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

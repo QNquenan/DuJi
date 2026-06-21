@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/equipment.dart';
-import '../utils/input_formatters.dart';
+import '../utils/input_formatters.dart' show PriceInputFormatter;
 import '../widgets/date_picker_wheel.dart';
 import '../widgets/emoji_picker_sheet.dart';
 
@@ -140,7 +140,7 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
               controller: _priceCtrl,
               hint: '¥ 请输入价格',
               keyboardType: TextInputType.number,
-              inputFormatters: [DigitsOnlyInputFormatter()],
+              inputFormatters: [PriceInputFormatter()],
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return '请输入价格';
                 if (double.tryParse(v.trim()) == null) return '请输入有效价格';

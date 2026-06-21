@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/equipment.dart';
-import '../utils/input_formatters.dart';
+import '../utils/input_formatters.dart' show PriceInputFormatter;
 import '../widgets/date_picker_wheel.dart';
 import '../widgets/emoji_picker_sheet.dart';
 
@@ -37,7 +37,7 @@ class _EditEquipmentPageState extends State<_EditEquipmentPage> {
   void initState() {
     super.initState();
     _titleCtrl = TextEditingController(text: widget.equipment.title);
-    _priceCtrl = TextEditingController(text: widget.equipment.priceFormatted);
+    _priceCtrl = TextEditingController(text: widget.equipment.price.toString());
     _notesCtrl = TextEditingController(text: widget.equipment.notes);
     _purchaseDate = widget.equipment.purchaseDate;
     _emoji = widget.equipment.emoji;
@@ -62,11 +62,12 @@ class _EditEquipmentPageState extends State<_EditEquipmentPage> {
 
   Future<void> _pickEmoji() async {
     final option = await showEmojiPicker(context);
-    if (option != null && mounted)
+    if (option != null && mounted) {
       setState(() {
         _emoji = option.emoji;
         _emojiName = option.name;
       });
+    }
   }
 
   void _submit() {
@@ -149,7 +150,7 @@ class _EditEquipmentPageState extends State<_EditEquipmentPage> {
               controller: _priceCtrl,
               hint: '¥ 请输入价格',
               keyboardType: TextInputType.number,
-              inputFormatters: [DigitsOnlyInputFormatter()],
+              inputFormatters: [PriceInputFormatter()],
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return '请输入价格';
                 if (double.tryParse(v.trim()) == null) return '请输入有效价格';

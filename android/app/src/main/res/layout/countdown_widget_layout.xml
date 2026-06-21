@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 倒数日小组件 —— 极简现代风卡片（2×2），白色卡片不填满widget -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cdw_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <!-- 白色卡片容器：上下margin压缩高度，白色背景+圆角 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:orientation="vertical"
+        android:background="@drawable/countdown_card_bg">
+
+        <!-- 顶部标题栏：纯蓝色背景（无独立圆角，圆角由外层白色卡片提供） -->
+        <TextView
+            android:id="@+id/cdw_title_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:background="@drawable/countdown_title_bg"
+            android:text="请点击配置"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <!-- 内容区 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="4dp">
+
+            <!-- 数字 + 天 水平容器 -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <!-- 超大加粗数字 -->
+                <TextView
+                    android:id="@+id/cdw_days_number"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="--"
+                    android:textColor="#FF333333"
+                    android:textSize="42sp"
+                    android:textStyle="bold"
+                    android:lineSpacingMultiplier="1.2"
+                    android:gravity="center" />
+
+                <!-- 天（字体比数字小） -->
+                <TextView
+                    android:id="@+id/cdw_day_unit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="天"
+                    android:textColor="#FF333333"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center" />
+
+            </LinearLayout>
+
+            <!-- 具体日期 -->
+            <TextView
+                android:id="@+id/cdw_date_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text=""
+                android:textColor="#FF666666"
+                android:textSize="10sp"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

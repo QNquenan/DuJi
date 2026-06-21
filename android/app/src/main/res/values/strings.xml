@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_equipment_desc">查看我的物品统计</string>
+    <string name="widget_countdown_desc">显示倒数日</string>
+</resources>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 倒数日小组件配置页 —— 现代化设计，自适应深色模式 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/config_page_bg">
+
+    <!-- 顶部标题区 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="选择倒数日"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@color/config_title" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="选择一个事件在桌面显示"
+            android:textSize="13sp"
+            android:textColor="@color/config_subtitle" />
+
+    </LinearLayout>
+
+    <!-- 事件列表 -->
+    <ListView
+        android:id="@+id/event_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="8dp"
+        android:background="@android:color/transparent" />
+
+</LinearLayout>

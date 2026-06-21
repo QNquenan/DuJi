@@ -35,25 +35,64 @@ const List<EmojiOption> presetEmojis = [
   EmojiOption('🎸', '吉他'),
 ];
 
+/// 倒数日预设表情列表（节日、纪念意义）
+const List<EmojiOption> countdownPresetEmojis = [
+  EmojiOption('❤️', '爱心'),
+  EmojiOption('💕', '双心'),
+  EmojiOption('💍', '戒指'),
+  EmojiOption('🤝', '牵手'),
+  EmojiOption('🌹', '玫瑰'),
+  EmojiOption('🎂', '蛋糕'),
+  EmojiOption('🎉', '庆祝'),
+  EmojiOption('🎊', '彩花'),
+  EmojiOption('🎀', '蝴蝶结'),
+  EmojiOption('🎈', '气球'),
+  EmojiOption('🏮', '灯笼'),
+  EmojiOption('🧧', '红包'),
+  EmojiOption('🎁', '礼物'),
+  EmojiOption('🌟', '星星'),
+  EmojiOption('✨', '闪光'),
+  EmojiOption('🔥', '火焰'),
+  EmojiOption('💯', '满分'),
+  EmojiOption('🎓', '毕业帽'),
+  EmojiOption('✈️', '飞机'),
+  EmojiOption('🗺️', '地图'),
+  EmojiOption('🏠', '家'),
+  EmojiOption('☀️', '太阳'),
+  EmojiOption('🌙', '月亮'),
+  EmojiOption('🌸', '樱花'),
+];
+
 /// 弹出表情选择底部抽屉
+/// [emojis] 可选自定义表情列表，默认使用 [presetEmojis]
 /// 返回选中的 [EmojiOption]，取消返回 null
-Future<EmojiOption?> showEmojiPicker(BuildContext context) {
+Future<EmojiOption?> showEmojiPicker(
+  BuildContext context, {
+  List<EmojiOption>? emojis,
+}) {
+  final effectiveEmojis = emojis ?? presetEmojis;
   return showModalBottomSheet<EmojiOption>(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (_) => _EmojiPickerSheet(),
+    builder: (_) => _EmojiPickerSheet(emojis: effectiveEmojis),
   );
 }
 
 class _EmojiPickerSheet extends StatefulWidget {
+  final List<EmojiOption> emojis;
+
+  const _EmojiPickerSheet({this.emojis = presetEmojis});
+
   @override
   State<_EmojiPickerSheet> createState() => _EmojiPickerSheetState();
 }
 
 class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
   EmojiOption? _selected;
+
+  List<EmojiOption> get _emojis => widget.emojis;
 
   void _customEmoji() {
     String emojiText = '';
@@ -166,25 +205,25 @@ class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
                 crossAxisSpacing: 8,
                 childAspectRatio: 0.85,
               ),
-              itemCount: presetEmojis.length,
+              itemCount: _emojis.length,
               itemBuilder: (_, i) => GestureDetector(
-                onTap: () => setState(() => _selected = presetEmojis[i]),
+                onTap: () => setState(() => _selected = _emojis[i]),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: _selected?.emoji == presetEmojis[i].emoji
+                    color: _selected?.emoji == _emojis[i].emoji
                         ? cs.primary.withValues(alpha: 0.12)
                         : cs.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
-                    border: _selected?.emoji == presetEmojis[i].emoji
+                    border: _selected?.emoji == _emojis[i].emoji
                         ? Border.all(color: cs.primary, width: 1.5)
                         : null,
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(presetEmojis[i].emoji, style: const TextStyle(fontSize: 24)),
+                      Text(_emojis[i].emoji, style: const TextStyle(fontSize: 24)),
                       const SizedBox(height: 4),
-                      Text(presetEmojis[i].name,
+                      Text(_emojis[i].name,
                           style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
                     ],
                   ),

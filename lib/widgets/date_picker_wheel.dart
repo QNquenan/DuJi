@@ -86,10 +86,20 @@ class _DatePickerDialogState extends State<_DatePickerDialog> {
                   Row(
                     children: [
                       // 年
-                      Expanded(flex: 2, child: _buildWheel(_yearCtrl, _maxYear - _minYear + 1, (i) => '${_minYear + i}', (i) => setState(() => _selectedYear = _minYear + i))),
+                      Expanded(flex: 2, child: _buildWheel(_yearCtrl, _maxYear - _minYear + 1, (i) => '${_minYear + i}', (i) => setState(() {
+                        _selectedYear = _minYear + i;
+                        if (_selectedDay > _daysInMonth(_selectedYear, _selectedMonth)) {
+                          _selectedDay = _daysInMonth(_selectedYear, _selectedMonth);
+                        }
+                      }))),
                       Padding(padding: const EdgeInsets.only(bottom: 2), child: Text('年', style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurface))),
                       // 月
-                      Expanded(flex: 1, child: _buildWheel(_monthCtrl, 12, (i) => '${i + 1}', (i) => setState(() => _selectedMonth = i + 1))),
+                      Expanded(flex: 1, child: _buildWheel(_monthCtrl, 12, (i) => '${i + 1}', (i) => setState(() {
+                        _selectedMonth = i + 1;
+                        if (_selectedDay > _daysInMonth(_selectedYear, _selectedMonth)) {
+                          _selectedDay = _daysInMonth(_selectedYear, _selectedMonth);
+                        }
+                      }))),
                       Padding(padding: const EdgeInsets.only(bottom: 2), child: Text('月', style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurface))),
                       // 日
                       Expanded(flex: 1, child: _buildWheel(_dayCtrl, _daysInMonth(_selectedYear, _selectedMonth), (i) => '${i + 1}', (i) => setState(() => _selectedDay = i + 1))),

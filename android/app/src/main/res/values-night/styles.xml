@@ -15,4 +15,10 @@
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+
+    <!-- 倒数日小组件配置页主题（深色模式） -->
+    <style name="WidgetConfigTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:colorBackground">@color/config_page_bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
 </resources>
