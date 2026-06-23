@@ -3,8 +3,9 @@ name: Build Release APK
 on:
   push:
     branches: [main]
-    tags:
-      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -32,15 +33,17 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+      - name: Extract latest changelog
+        run: |
+          awk '/^## \[/{if(found)exit;found=1;print;next}found{print}' \
+            CHANGELOG.md > .changelog-latest.md
+          echo "tag=v$(sed -n 's/^## \[\(.*\)\].*/\1/p;T;q' CHANGELOG.md)" \
+            >> "$GITHUB_ENV"
 
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.tag }}
+          name: ${{ env.tag }}
+          body_path: .changelog-latest.md
           files: build/app/outputs/flutter-apk/app-release.apk
-          generate_release_notes: true
