@@ -34,14 +34,6 @@ class _HomePageState extends State<HomePage>
   late Animation<double> _titleFadeAnim;
   late Animation<Offset> _searchSlideAnim;
 
-  // ── 缓存，避免每次 build 重复遍历 ──
-  List<Equipment>? _cachedFiltered;
-  String _prevQuery = '';
-  SortMode _prevSort = SortMode.created;
-  int _prevListHash = 0;
-  double _cachedTotalValue = 0;
-  double _cachedAveragePrice = 0;
-
   int _currentPageIndex = 0; // 0 = 我的物品, 1 = 倒数日
 
   @override
@@ -79,31 +71,22 @@ class _HomePageState extends State<HomePage>
     super.dispose();
   }
 
-  List<Equipment> get _filteredList {
-    final hash = Object.hashAll(_equipmentList);
-    if (_cachedFiltered == null ||
-        hash != _prevListHash ||
-        _searchQuery != _prevQuery ||
-        appSettings.value.sortMode != _prevSort) {
-      _prevListHash = hash;
-      _prevQuery = _searchQuery;
-      _prevSort = appSettings.value.sortMode;
-      _cachedFiltered = _computeFilteredList();
-    }
-    return _cachedFiltered!;
-  }
+  List<Equipment> get _filteredList => _computeFilteredList();
 
   List<Equipment> _computeFilteredList() {
     var list = _equipmentList.toList();
+    final asc = appSettings.value.sortAscending;
     // 排序
     switch (appSettings.value.sortMode) {
       case SortMode.purchaseDate:
-        list.sort((a, b) => b.purchaseDate.compareTo(a.purchaseDate));
+        list.sort((a, b) => asc
+            ? a.purchaseDate.compareTo(b.purchaseDate)
+            : b.purchaseDate.compareTo(a.purchaseDate));
       case SortMode.created:
         list.sort((a, b) {
           final ai = int.tryParse(a.id) ?? 0;
           final bi = int.tryParse(b.id) ?? 0;
-          return bi.compareTo(ai);
+          return asc ? ai.compareTo(bi) : bi.compareTo(ai);
         });
     }
     // 搜索过滤
@@ -161,7 +144,6 @@ class _HomePageState extends State<HomePage>
         _equipmentList = list;
         _loaded = true;
       });
-      _invalidateStats();
       _updateWidgets();
     }
   }
@@ -210,22 +192,12 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  void _invalidateStats() {
-    _cachedTotalValue = _equipmentList.fold(0, (s, e) => s + e.price);
-    if (_equipmentList.isEmpty) {
-      _cachedAveragePrice = 0;
-    } else {
-      final totalDaily = _equipmentList.fold<double>(
-        0,
-        (s, e) => s + e.dailyAverage(),
-      );
-      _cachedAveragePrice = totalDaily / _equipmentList.length;
-    }
+  double get _totalValue => _equipmentList.fold(0, (s, e) => s + e.price);
+
+  double get _averagePrice {
+    if (_equipmentList.isEmpty) return 0;
+    return _equipmentList.fold<double>(0, (s, e) => s + e.dailyAverage()) / _equipmentList.length;
   }
-
-  double get _totalValue => _cachedTotalValue;
-
-  double get _averagePrice => _cachedAveragePrice;
 
   /// 更新桌面小组件数据
   static const _widgetChannel = MethodChannel('cn.quenan.duji/widgets');
@@ -264,7 +236,6 @@ class _HomePageState extends State<HomePage>
     final equipment = await pushAddEquipmentPage(context);
     if (equipment != null) {
       setState(() => _equipmentList.add(equipment));
-      _invalidateStats();
       await _save();
       if (mounted) _showToast('添加成功');
     }
@@ -279,12 +250,10 @@ class _HomePageState extends State<HomePage>
     );
     if (result == true) {
       if (mounted) setState(() => _equipmentList.removeAt(index));
-      _invalidateStats();
       await _save();
       if (mounted) _showToast('删除成功');
     } else if (result is Equipment) {
       if (mounted) setState(() => _equipmentList[index] = result);
-      _invalidateStats();
       await _save();
     }
   }
@@ -309,9 +278,12 @@ class _HomePageState extends State<HomePage>
   }
 
   Widget _buildGridTile(Equipment equipment, int index) {
-    return _GridTileWidget(
-      equipment: equipment,
-      onTap: () => _onItemTap(index),
+    return RepaintBoundary(
+      key: ValueKey(equipment.id),
+      child: _GridTileWidget(
+        equipment: equipment,
+        onTap: () => _onItemTap(index),
+      ),
     );
   }
 
@@ -340,8 +312,8 @@ class _HomePageState extends State<HomePage>
             if (_isSearching) {
               return Stack(
                 children: [
-                  Opacity(
-                    opacity: _titleFadeAnim.value,
+                  FadeTransition(
+                    opacity: _titleFadeAnim,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -363,10 +335,6 @@ class _HomePageState extends State<HomePage>
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
                               vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: cs.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -499,6 +467,7 @@ class _HomePageState extends State<HomePage>
               searchQuery: _searchQuery,
               displayMode: appSettings.value.displayMode,
               sortMode: appSettings.value.countdownSortMode,
+              sortAscending: appSettings.value.sortAscending,
             )
           : !_loaded
               ? const Center(child: CircularProgressIndicator())
@@ -569,6 +538,7 @@ class _HomePageState extends State<HomePage>
                             itemBuilder: (context, index) => Padding(
                               padding: const EdgeInsets.only(bottom: 8),
                               child: RepaintBoundary(
+                                key: ValueKey(_filteredList[index].id),
                                 child: EquipmentTile(
                                   equipment: _filteredList[index],
                                   onTap: () => _onItemTap(index),
@@ -587,9 +557,7 @@ class _HomePageState extends State<HomePage>
                                 ),
                             itemCount: _filteredList.length,
                             itemBuilder: (context, index) =>
-                                RepaintBoundary(
-                                  child: _buildGridTile(_filteredList[index], index),
-                                ),
+                                _buildGridTile(_filteredList[index], index),
                           ),
                   ),
               ],
@@ -662,6 +630,7 @@ class _GridTileWidgetState extends State<_GridTileWidget>
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final cardColor = Theme.of(context).cardColor;
     return GestureDetector(
       onTap: widget.onTap,
       onTapDown: (_) => _scaleCtrl.forward(),
@@ -675,7 +644,7 @@ class _GridTileWidgetState extends State<_GridTileWidget>
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+            color: cardColor,
             borderRadius: BorderRadius.circular(14),
           ),
           padding: const EdgeInsets.all(14),

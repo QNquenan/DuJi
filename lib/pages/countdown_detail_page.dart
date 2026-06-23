@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/countdown_event.dart';
-import 'edit_countdown_event_page.dart';
+import 'add_countdown_event_page.dart';
 
 /// 倒数日详情页 — 返回 CountdownEvent(编辑) 或 true(删除) 或 null(无变化)
 class CountdownDetailPage extends StatefulWidget {
@@ -24,9 +24,10 @@ class _CountdownDetailPageState extends State<CountdownDetailPage> {
     showDialog(
       context: context,
       builder: (ctx) {
-        final dcs = Theme.of(ctx).colorScheme;
+        final theme = Theme.of(ctx);
+        final dcs = theme.colorScheme;
         return AlertDialog(
-          backgroundColor: Theme.of(ctx).dialogTheme.backgroundColor ?? Colors.white,
+          backgroundColor: theme.dialogTheme.backgroundColor ?? Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           content: Column(
@@ -105,6 +106,7 @@ class _CountdownDetailPageState extends State<CountdownDetailPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final cardColor = Theme.of(context).cardColor;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -137,7 +139,7 @@ class _CountdownDetailPageState extends State<CountdownDetailPage> {
             width: double.infinity,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
+              color: cardColor,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Column(

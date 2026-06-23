@@ -182,6 +182,22 @@ class _SettingsPageState extends State<SettingsPage> {
                   if (result != null) _update((s) => s.copyWith(sortMode: result));
                 },
               ),
+              _divider(),
+              _SettingTile(
+                icon: Icons.swap_vert_outlined,
+                label: '排序方向',
+                value: s.sortAscending ? '升序' : '倒序',
+                onTap: () async {
+                  final result = await _showPickerSheet<bool>(
+                    currentValue: s.sortAscending,
+                    items: const [
+                      (false, '倒序'),
+                      (true, '升序'),
+                    ],
+                  );
+                  if (result != null) _update((s) => s.copyWith(sortAscending: result));
+                },
+              ),
             ],
           ),
           const SizedBox(height: 28),
@@ -205,6 +221,22 @@ class _SettingsPageState extends State<SettingsPage> {
                     ],
                   );
                   if (result != null) _update((s) => s.copyWith(countdownSortMode: result));
+                },
+              ),
+              _divider(),
+              _SettingTile(
+                icon: Icons.swap_vert_outlined,
+                label: '排序方向',
+                value: s.sortAscending ? '升序' : '倒序',
+                onTap: () async {
+                  final result = await _showPickerSheet<bool>(
+                    currentValue: s.sortAscending,
+                    items: const [
+                      (false, '倒序'),
+                      (true, '升序'),
+                    ],
+                  );
+                  if (result != null) _update((s) => s.copyWith(sortAscending: result));
                 },
               ),
               _divider(),
@@ -261,15 +293,17 @@ class _SettingsPageState extends State<SettingsPage> {
     ),
   );
 
-  Widget _buildCard(BuildContext context, {required List<Widget> children}) =>
-      Container(
+  Widget _buildCard(BuildContext context, {required List<Widget> children}) {
+    final cardColor = Theme.of(context).cardColor;
+    return Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: cardColor,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(children: children),
       );
+  }
 
   Widget _divider() => const Divider(height: 1, indent: 16, endIndent: 16);
 

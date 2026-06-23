@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'pages/home_page.dart';
 import 'services/app_settings.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  appSettings.load();
+  await appSettings.load();
   runApp(const MyApp());
 }
 
@@ -16,12 +16,9 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  ThemeMode _lastThemeMode = ThemeMode.light;
-
   @override
   void initState() {
     super.initState();
-    _lastThemeMode = appSettings.value.themeMode;
     appSettings.addListener(_onSettingsChanged);
   }
 
@@ -32,11 +29,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _onSettingsChanged() {
-    final mode = appSettings.value.themeMode;
-    if (mode != _lastThemeMode) {
-      _lastThemeMode = mode;
-      setState(() {});
-    }
+    // Only rebuild when theme actually changes
+    setState(() {});
   }
 
   @override
@@ -80,8 +74,8 @@ class _MyAppState extends State<MyApp> {
         ),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: _NoPinkTransitionBuilder(),
-            TargetPlatform.iOS: _NoPinkTransitionBuilder(),
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           },
         ),
       ),
@@ -109,7 +103,7 @@ class _MyAppState extends State<MyApp> {
           onError: Colors.black,
         ),
         cardColor: const Color(0xFF1E1E1E),
-        dialogTheme: const DialogThemeData(backgroundColor: Color(0xFF2C2C2C)),
+        dialogTheme: const DialogThemeData(backgroundColor: Color(0xFF1E1E1E)),
         dividerColor: Colors.white12,
         canvasColor: const Color(0xFF121212),
         appBarTheme: const AppBarTheme(
@@ -120,8 +114,8 @@ class _MyAppState extends State<MyApp> {
         ),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: _NoPinkTransitionBuilder(),
-            TargetPlatform.iOS: _NoPinkTransitionBuilder(),
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           },
         ),
       ),
@@ -130,29 +124,4 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-/// 自定义页面过渡 — SlideTransition + FadeTransition，GPU 合成
-class _NoPinkTransitionBuilder extends PageTransitionsBuilder {
-  const _NoPinkTransitionBuilder();
 
-  @override
-  Widget buildTransitions<T>(
-    PageRoute<T> route,
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) {
-    return FadeTransition(
-      opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: animation, curve: const Interval(0.0, 0.3, curve: Curves.easeOut)),
-      ),
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(1.0, 0.0),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-        child: child,
-      ),
-    );
-  }
-}

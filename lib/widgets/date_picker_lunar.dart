@@ -14,7 +14,7 @@ class DatePickerResult {
   });
 }
 
-/// 弹出日期选择器（公历/农历双 tab，支持到 2099 年）
+/// 弹出公历日期选择器（公历/农历双 tab，支持到 2099 年）
 Future<DatePickerResult?> showLunarDatePicker(
   BuildContext context, {
   DateTime? initialDate,
@@ -161,7 +161,7 @@ class _LunarDatePickerDialogState extends State<_LunarDatePickerDialog> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return AlertDialog(
-      backgroundColor: Theme.of(context).dialogTheme.backgroundColor ?? Colors.white,
+      backgroundColor: Theme.of(context).dialogTheme.backgroundColor ?? cs.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       content: SizedBox(
@@ -398,6 +398,8 @@ class _LunarDatePickerDialogState extends State<_LunarDatePickerDialog> {
       diameterRatio: 1.6,
       squeeze: 1.15,
       overAndUnderCenterOpacity: 0.3,
+      useMagnifier: true,
+      physics: const FixedExtentScrollPhysics(),
       onSelectedItemChanged: onChanged,
       childDelegate: ListWheelChildBuilderDelegate(
         childCount: count,

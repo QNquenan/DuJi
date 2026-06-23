@@ -4,6 +4,7 @@ import '../utils/lunar_calendar.dart';
 enum CountdownType {
   days,        // 倒/正数日
   anniversary, // 纪念日
+  birthday,    // 生日
 }
 
 /// 重复周期
@@ -33,8 +34,78 @@ CountdownStatus computeCountdownStatus(CountdownEvent event) {
     event.targetDate.day,
   );
 
+  // 生日 — 动态计算下一次生日（天数倒计时）
+  if (event.type == CountdownType.birthday) {
+    if (event.isLunar) {
+      // 农历生日：先还原农历月日，再寻找最近一次的公历日期
+      final lunar = solarToLunar(event.targetDate.year, event.targetDate.month, event.targetDate.day);
+      if (lunar != null) {
+        final m = lunar.month;
+        final d = lunar.day;
+
+        /// 尝试在给定年份找到对应的公历日期
+        DateTime? bestInYear(int y) {
+          final result = _safeLunarToSolar(y, m, d);
+          if (result != null) return result;
+          // 闰月在本年不存在 → 用非闰月的同一天
+          if (m < 0) return _safeLunarToSolar(y, -m, d);
+          return null;
+        }
+
+        // 今年
+        final thisY = bestInYear(today.year);
+        if (thisY != null && !thisY.isBefore(today)) {
+          if (thisY == today) return CountdownStatus(0, event.targetDateFormatted, '就是今天！');
+          return CountdownStatus(thisY.difference(today).inDays, event.targetDateFormatted, '还有 ${thisY.difference(today).inDays} 天');
+        }
+        // 明年
+        final nextY = bestInYear(today.year + 1);
+        if (nextY != null) {
+          return CountdownStatus(nextY.difference(today).inDays, event.targetDateFormatted, '还有 ${nextY.difference(today).inDays} 天');
+        }
+      }
+    }
+    // 公历生日
+    final month = event.targetDate.month;
+    final day = event.targetDate.day;
+    final thisYearBirthday = DateTime(today.year, month, day);
+    if (thisYearBirthday == today) {
+      return CountdownStatus(0, event.targetDateFormatted, '就是今天！');
+    }
+    if (thisYearBirthday.isAfter(today)) {
+      final diff = thisYearBirthday.difference(today).inDays;
+      return CountdownStatus(diff, event.targetDateFormatted, '还有 $diff 天');
+    }
+    // 今年生日已过，计算到明年生日的天数
+    final nextBirthday = DateTime(today.year + 1, month, day);
+    final diff = nextBirthday.difference(today).inDays;
+    return CountdownStatus(diff, event.targetDateFormatted, '还有 $diff 天');
+  }
+
   // 纪念日
   if (event.type == CountdownType.anniversary) {
+    // 正好今天
+    if (targetDay == today) {
+      return CountdownStatus(0, event.targetDateFormatted, '就是今天！');
+    }
+
+    if (targetDay.isAfter(today)) {
+      // 未来日期 — 还没到
+      final daysUntil = targetDay.difference(today).inDays;
+      final yearsUntil = targetDay.year - today.year;
+      // 如果纪念日今年的月日还没到，整年数减一
+      final adjustedYears = (targetDay.month > today.month ||
+              (targetDay.month == today.month && targetDay.day > today.day))
+          ? yearsUntil
+          : yearsUntil - 1;
+      if (adjustedYears >= 1) {
+        return CountdownStatus(daysUntil, event.targetDateFormatted, '还有 $adjustedYears 周年');
+      }
+      // 不足一周年，显示天数
+      return CountdownStatus(daysUntil, event.targetDateFormatted, '还有 $daysUntil 天');
+    }
+
+    // 过去日期
     final years = today.year - targetDay.year;
     final m = today.month - targetDay.month;
     final d = today.day - targetDay.day;
@@ -118,6 +189,20 @@ CountdownStatus computeCountdownStatus(CountdownEvent event) {
 
 String _p2(int n) => n.toString().padLeft(2, '0');
 
+/// 安全地将农历月日转为公历日期。
+/// 若该日不存在（如某年五月只有廿九），自动前推到该月最后一个有效日。
+/// 若整个月不存在（闰月），返回 null（由调用方处理降级）。
+DateTime? _safeLunarToSolar(int year, int month, int day) {
+  var d = lunarToSolar(year, month, day);
+  if (d != null) return d;
+  // 该日不存在，向前找最后一个有效日
+  for (int dd = day - 1; dd >= 1; dd--) {
+    d = lunarToSolar(year, month, dd);
+    if (d != null) return d;
+  }
+  return null;
+}
+
 /// 倒数日/纪念日数据模型
 class CountdownEvent {
   final String id;
@@ -153,6 +238,13 @@ class CountdownEvent {
   });
 
   String get targetDateFormatted {
+    if (type == CountdownType.birthday && isLunar) {
+      final lunar = solarToLunar(targetDate.year, targetDate.month, targetDate.day);
+      if (lunar != null) return '每年 农历${lunar.monthName}${lunar.dayName}';
+    }
+    if (type == CountdownType.birthday) {
+      return '每年 ${targetDate.month}月${targetDate.day}日';
+    }
     if (isLunar) {
       final lunar = solarToLunar(targetDate.year, targetDate.month, targetDate.day);
       if (lunar != null) return '农历 ${lunar.year}年${lunar.monthName}月${lunar.dayName}';
@@ -165,6 +257,7 @@ class CountdownEvent {
   String get typeLabel => switch (type) {
     CountdownType.days => '倒/正数日',
     CountdownType.anniversary => '纪念日',
+    CountdownType.birthday => '生日',
   };
 
   String get repeatLabel => switch (repeatCycle) {
@@ -186,7 +279,6 @@ class CountdownEvent {
     return sorted.map((d) => '$d 日').join(' ');
   }
 
-  bool get isSolarDate => !isLunar;
 
   Map<String, dynamic> toJson() => {
     'id': id,

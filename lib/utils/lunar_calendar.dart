@@ -17,7 +17,7 @@ class LunarDate {
   /// 月名称（如 "正月"、"五月"、"闰六月"）
   String get monthName {
     final lunar = Lunar.fromYmd(year, month, 1);
-    return lunar.getMonthInChinese();
+    return '${lunar.getMonthInChinese()}月';
   }
 
   String get dayName {
@@ -34,12 +34,6 @@ class LunarDate {
   }
 
   String get formatted => '$monthName$dayName';
-}
-
-/// 农历年是否有闰月
-int leapMonth(int year) {
-  final ly = LunarYear.fromYear(year);
-  return ly.getLeapMonth();
 }
 
 /// 农历月天数

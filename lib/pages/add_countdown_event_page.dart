@@ -3,40 +3,56 @@ import '../models/countdown_event.dart';
 import '../widgets/emoji_picker_sheet.dart' show countdownPresetEmojis, showEmojiPicker;
 import '../widgets/date_picker_lunar.dart';
 import '../utils/lunar_calendar.dart';
+import '../widgets/form_helpers.dart';
 
 /// 添加倒数日页面（全屏页面）
 Future<CountdownEvent?> pushAddCountdownPage(BuildContext context) {
   return Navigator.push<CountdownEvent>(
     context,
-    MaterialPageRoute(builder: (_) => const _AddCountdownPage()),
+    MaterialPageRoute(builder: (_) => const _CountdownFormPage()),
   );
 }
 
-class _AddCountdownPage extends StatefulWidget {
-  const _AddCountdownPage();
-
-  @override
-  State<_AddCountdownPage> createState() => _AddCountdownPageState();
+/// 编辑倒数日页面（全屏页面）
+Future<CountdownEvent?> pushEditCountdownPage(
+  BuildContext context,
+  CountdownEvent event,
+) {
+  return Navigator.push<CountdownEvent>(
+    context,
+    MaterialPageRoute(builder: (_) => _CountdownFormPage(existingEvent: event)),
+  );
 }
 
-class _AddCountdownPageState extends State<_AddCountdownPage> {
+class _CountdownFormPage extends StatefulWidget {
+  final CountdownEvent? existingEvent;
+  const _CountdownFormPage({this.existingEvent});
+
+  @override
+  State<_CountdownFormPage> createState() => _CountdownFormPageState();
+}
+
+class _CountdownFormPageState extends State<_CountdownFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
-  DateTime _targetDate = DateTime.now();
-  String _emoji = '📅';
-  String _emojiName = '日历';
-  CountdownType _type = CountdownType.days;
-  RepeatCycle _repeatCycle = RepeatCycle.none;
-  List<int> _weekDays = [];
-  List<int> _monthDays = [];
-  bool _isLunar = false;
+  late DateTime _targetDate;
+  late String _emoji;
+  late String _emojiName;
+  late CountdownType _type;
+  late RepeatCycle _repeatCycle;
+  late List<int> _weekDays;
+  late List<int> _monthDays;
+  late bool _isLunar;
   bool _isPinned = false;
-  bool _datePicked = false; // 用户是否主动选择了日期
+  bool _datePicked = false;
+
+  bool get _isEditing => widget.existingEvent != null;
 
   static const _typeOptions = [
     CountdownType.days,
     CountdownType.anniversary,
+    CountdownType.birthday,
   ];
 
   static const _repeatOptions = [
@@ -47,6 +63,34 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final e = widget.existingEvent;
+    if (e != null) {
+      _titleCtrl.text = e.title;
+      _notesCtrl.text = e.notes;
+      _targetDate = e.targetDate;
+      _emoji = e.emoji;
+      _emojiName = e.emojiName;
+      _type = e.type;
+      _repeatCycle = e.repeatCycle;
+      _weekDays = List.of(e.weekDays);
+      _monthDays = List.of(e.monthDays);
+      _isLunar = e.isLunar;
+      _isPinned = e.isPinned;
+    } else {
+      _targetDate = DateTime.now();
+      _emoji = '📅';
+      _emojiName = '日历';
+      _type = CountdownType.days;
+      _repeatCycle = RepeatCycle.none;
+      _weekDays = [];
+      _monthDays = [];
+      _isLunar = false;
+    }
+  }
+
+  @override
   void dispose() {
     _titleCtrl.dispose();
     _notesCtrl.dispose();
@@ -54,7 +98,16 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
   }
 
   Future<void> _pickDate() async {
-    if (_repeatCycle == RepeatCycle.weekly) {
+    if (_type == CountdownType.birthday) {
+      final result = await showLunarDatePicker(context, initialDate: _targetDate, initialIsLunar: _isLunar);
+      if (result != null && mounted) {
+        setState(() {
+          _targetDate = result.solarDate;
+          _isLunar = result.isLunar;
+          _datePicked = true;
+        });
+      }
+    } else if (_repeatCycle == RepeatCycle.weekly) {
       final result = await showWeekDaysPicker(context, initial: _weekDays);
       if (result != null && mounted) setState(() => _weekDays = result);
     } else if (_repeatCycle == RepeatCycle.monthly) {
@@ -90,31 +143,28 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_repeatCycle == RepeatCycle.weekly && _weekDays.isEmpty) {
-      _showToast('请至少选择一天');
+      showStyledSnackBar(context, '请至少选择一天');
       return;
     }
     if (_repeatCycle == RepeatCycle.monthly && _monthDays.isEmpty) {
-      _showToast('请至少选择一天');
+      showStyledSnackBar(context, '请至少选择一天');
       return;
     }
-    // 当为非周/月重复时，确保用户主动点击过日期选择器
     if (_repeatCycle != RepeatCycle.weekly &&
         _repeatCycle != RepeatCycle.monthly &&
         !_datePicked) {
-      _showToast('请选择日期');
+      showStyledSnackBar(context, '请选择日期');
       return;
     }
-
-    // 校验日期是否过于离谱（允许过去日期，仅阻挡明显无效的选择）
     if (_repeatCycle == RepeatCycle.none &&
         _type == CountdownType.days &&
         _targetDate.isBefore(DateTime(1900, 1, 1))) {
-      _showToast('选择的日期有误，请重新选择');
+      showStyledSnackBar(context, '选择的日期有误，请重新选择');
       return;
     }
 
     final event = CountdownEvent(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: _isEditing ? widget.existingEvent!.id : DateTime.now().millisecondsSinceEpoch.toString(),
       title: _titleCtrl.text.trim(),
       targetDate: _targetDate,
       notes: _notesCtrl.text.trim(),
@@ -130,21 +180,14 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
     Navigator.pop(context, event);
   }
 
-  void _showToast(String msg) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg, style: const TextStyle(color: Colors.white)),
-        backgroundColor: Colors.black.withValues(alpha: 0.75),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
   String get _dateLabel {
+    if (_type == CountdownType.birthday) {
+      if (_isLunar) {
+        final lunar = solarToLunar(_targetDate.year, _targetDate.month, _targetDate.day);
+        if (lunar != null) return '每年 农历${lunar.monthName}${lunar.dayName}';
+      }
+      return '每年 ${_targetDate.month}月${_targetDate.day}日';
+    }
     if (_repeatCycle == RepeatCycle.weekly) {
       if (_weekDays.isEmpty) return '请选择';
       const names = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -166,10 +209,11 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final cardColor = Theme.of(context).cardColor;
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          '添加日子',
+          _isEditing ? '编辑日子' : '添加日子',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: cs.onSurface),
         ),
         leading: IconButton(
@@ -191,7 +235,7 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
                     Container(
                       width: 80, height: 80,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
+                        color: cardColor,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: cs.outlineVariant),
                       ),
@@ -210,9 +254,10 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
             const SizedBox(height: 24),
 
             // ── 事件名称 ──
-            _label('事件名称'),
+            buildLabel(context, '事件名称'),
             const SizedBox(height: 8),
-            _buildField(
+            buildFormField(
+              context: context,
               controller: _titleCtrl,
               hint: '请输入事件名称',
               validator: (v) => v == null || v.trim().isEmpty ? '请输入名称' : null,
@@ -220,21 +265,32 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
             const SizedBox(height: 20),
 
             // ── 类型 ──
-            _label('类型'),
+            buildLabel(context, '类型'),
             const SizedBox(height: 8),
-            _buildDropdown(
+            _buildDropdown<CountdownType>(
               value: _type,
               items: _typeOptions,
-              labelFn: (t) => t == CountdownType.days ? '倒/正数日' : '纪念日',
+              labelFn: (t) => switch (t) {
+                CountdownType.days => '倒/正数日',
+                CountdownType.anniversary => '纪念日',
+                CountdownType.birthday => '生日',
+              },
               onChanged: (v) {
-                if (v != null) setState(() => _type = v);
+                if (v != null) {
+                  setState(() {
+                    _type = v;
+                    if (v == CountdownType.birthday) {
+                      _repeatCycle = RepeatCycle.yearly;
+                    }
+                  });
+                }
               },
             ),
             const SizedBox(height: 20),
 
-            // ── 重复周期（仅倒/正数日） ──
+            // ── 重复周期（仅倒/正数日，生日固定每年） ──
             if (_type == CountdownType.days) ...[
-              _label('重复周期'),
+              buildLabel(context, '重复周期'),
               const SizedBox(height: 8),
               _buildDropdown(
                 value: _repeatCycle,
@@ -249,12 +305,8 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
                   if (v != null) {
                     setState(() {
                       _repeatCycle = v;
-                      if (v != RepeatCycle.weekly) {
-                        _weekDays = [];
-                      }
-                      if (v != RepeatCycle.monthly) {
-                        _monthDays = [];
-                      }
+                      if (v != RepeatCycle.weekly) _weekDays = [];
+                      if (v != RepeatCycle.monthly) _monthDays = [];
                     });
                   }
                 },
@@ -263,23 +315,23 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
             ],
 
             // ── 日期 ──
-            _label('日期'),
+            buildLabel(context, '日期'),
             const SizedBox(height: 8),
-            _buildDateField(),
+            buildDateField(context, _dateLabel, _pickDate),
             const SizedBox(height: 20),
 
             // ── 备注 ──
-            _label('备注'),
+            buildLabel(context, '备注'),
             const SizedBox(height: 8),
-            _buildField(controller: _notesCtrl, hint: '选填，备注信息', maxLines: 3),
+            buildFormField(context: context, controller: _notesCtrl, hint: '选填，备注信息', maxLines: 3),
             const SizedBox(height: 20),
 
             // ── 置顶 ──
             Row(
               children: [
-                Icon(Icons.push_pin_outlined, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                Icon(Icons.push_pin_outlined, size: 20, color: cs.onSurfaceVariant),
                 const SizedBox(width: 8),
-                Text('置顶', style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurface)),
+                Text('置顶', style: TextStyle(fontSize: 15, color: cs.onSurface)),
                 const Spacer(),
                 Switch(
                   value: _isPinned,
@@ -289,7 +341,7 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
             ),
             const SizedBox(height: 32),
 
-            // ── 添加按钮 ──
+            // ── 按钮 ──
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -301,93 +353,15 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   elevation: 0,
                 ),
-                child: const Text('添加', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                child: Text(
+                  _isEditing ? '保存修改' : '添加',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _label(String text) {
-    final cs = Theme.of(context).colorScheme;
-    return Text(
-      text,
-      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cs.onSurface),
-    );
-  }
-
-  /// 弹出底部抽屉选择器
-  Future<T?> _showPickerSheet<T>({
-    required List<T> items,
-    required String Function(T) labelFn,
-    required T currentValue,
-  }) {
-    return showModalBottomSheet<T>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) {
-        final dcs = Theme.of(ctx).colorScheme;
-        return Container(
-          decoration: BoxDecoration(
-            color: dcs.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 8),
-              Container(
-                width: 36, height: 4,
-                decoration: BoxDecoration(
-                  color: dcs.onSurfaceVariant.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: items.map((item) {
-                    final selected = item == currentValue;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: InkWell(
-                        onTap: () => Navigator.pop(ctx, item),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? dcs.primary.withValues(alpha: 0.12)
-                                : dcs.surfaceContainerHighest.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(12),
-                            border: selected
-                                ? Border.all(color: dcs.primary.withValues(alpha: 0.3))
-                                : null,
-                          ),
-                          child: Text(
-                            labelFn(item),
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                              color: selected ? dcs.primary : dcs.onSurface,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -398,12 +372,12 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
     required ValueChanged<T?> onChanged,
   }) {
     final cs = Theme.of(context).colorScheme;
-    final currentLabel = labelFn(value);
+    final cardColor = Theme.of(context).cardColor;
     return InkWell(
       onTap: () async {
-        final result = await _showPickerSheet(
-          items: items,
-          labelFn: labelFn,
+        final result = await showPickerSheet<T>(
+          context,
+          items: items.map((e) => (e, labelFn(e))).toList(),
           currentValue: value,
         );
         if (result != null) onChanged(result);
@@ -412,81 +386,19 @@ class _AddCountdownPageState extends State<_AddCountdownPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: cs.outlineVariant),
         ),
         child: Row(
           children: [
             Expanded(
-              child: Text(currentLabel, style: TextStyle(fontSize: 15, color: cs.onSurface)),
+              child: Text(labelFn(value), style: TextStyle(fontSize: 15, color: cs.onSurface)),
             ),
             Icon(Icons.arrow_drop_down, size: 20, color: cs.onSurfaceVariant),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildDateField() {
-    final cs = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: _pickDate,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.outlineVariant),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.calendar_today, size: 18, color: cs.onSurfaceVariant),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                _dateLabel,
-                style: TextStyle(fontSize: 15, color: cs.onSurface),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildField({
-    required TextEditingController controller,
-    required String hint,
-    String? Function(String?)? validator,
-    int maxLines = 1,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      style: TextStyle(color: cs.onSurface, fontSize: 15),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
-        filled: true,
-        fillColor: Theme.of(context).cardColor,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: cs.outlineVariant),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: cs.outlineVariant),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: cs.primary, width: 1.5),
-        ),
-      ),
-      validator: validator,
     );
   }
 }

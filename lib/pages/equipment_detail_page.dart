@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/equipment.dart';
-import 'edit_equipment_page.dart';
+import 'add_equipment_sheet.dart';
 
 /// 物品详情页 — 返回 true(删除) 或 Equipment(编辑) 或 null(无变化)
 class EquipmentDetailPage extends StatefulWidget {
@@ -24,10 +24,10 @@ class _EquipmentDetailPageState extends State<EquipmentDetailPage> {
     showDialog(
       context: context,
       builder: (ctx) {
-        final dcs = Theme.of(ctx).colorScheme;
+        final theme = Theme.of(ctx);
+        final dcs = theme.colorScheme;
         return AlertDialog(
-          backgroundColor:
-              Theme.of(ctx).dialogTheme.backgroundColor ?? Colors.white,
+          backgroundColor: theme.dialogTheme.backgroundColor ?? Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -128,6 +128,7 @@ class _EquipmentDetailPageState extends State<EquipmentDetailPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final cardColor = Theme.of(context).cardColor;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -170,7 +171,7 @@ class _EquipmentDetailPageState extends State<EquipmentDetailPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
+                  color: cardColor,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Column(

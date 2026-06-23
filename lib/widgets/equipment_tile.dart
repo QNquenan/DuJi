@@ -42,6 +42,7 @@ class _EquipmentTileState extends State<EquipmentTile>
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final cardColor = Theme.of(context).cardColor;
     return GestureDetector(
       onTap: widget.onTap,
       onTapDown: (_) => _scaleCtrl.forward(),
@@ -56,7 +57,7 @@ class _EquipmentTileState extends State<EquipmentTile>
         child: Container(
           margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+            color: cardColor,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Padding(

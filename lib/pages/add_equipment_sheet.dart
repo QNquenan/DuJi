@@ -1,33 +1,62 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../models/equipment.dart';
 import '../utils/input_formatters.dart' show PriceInputFormatter;
-import '../widgets/date_picker_wheel.dart';
+import '../widgets/date_picker_lunar.dart';
 import '../widgets/emoji_picker_sheet.dart';
+import '../widgets/form_helpers.dart';
 
 /// 添加物品页（全屏页面）
 Future<Equipment?> pushAddEquipmentPage(BuildContext context) {
   return Navigator.push<Equipment>(
     context,
-    MaterialPageRoute(builder: (_) => const _AddEquipmentPage()),
+    MaterialPageRoute(builder: (_) => const _EquipmentFormPage()),
   );
 }
 
-class _AddEquipmentPage extends StatefulWidget {
-  const _AddEquipmentPage();
-
-  @override
-  State<_AddEquipmentPage> createState() => _AddEquipmentPageState();
+/// 编辑物品页（全屏页面）
+Future<Equipment?> pushEditEquipmentPage(BuildContext context, Equipment equipment) {
+  return Navigator.push<Equipment>(
+    context,
+    MaterialPageRoute(builder: (_) => _EquipmentFormPage(existing: equipment)),
+  );
 }
 
-class _AddEquipmentPageState extends State<_AddEquipmentPage> {
+class _EquipmentFormPage extends StatefulWidget {
+  final Equipment? existing;
+  const _EquipmentFormPage({this.existing});
+
+  @override
+  State<_EquipmentFormPage> createState() => _EquipmentFormPageState();
+}
+
+class _EquipmentFormPageState extends State<_EquipmentFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
-  DateTime _purchaseDate = DateTime.now();
-  String _emoji = '📦';
-  String _emojiName = '箱子';
+  late DateTime _purchaseDate;
+  late String _emoji;
+  late String _emojiName;
+
+  bool get _isEditing => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    if (e != null) {
+      _titleCtrl.text = e.title;
+      _priceCtrl.text = e.price.toStringAsFixed(2);
+      _notesCtrl.text = e.notes;
+      _purchaseDate = e.purchaseDate;
+      _emoji = e.emoji;
+      _emojiName = e.emojiName;
+    } else {
+      _purchaseDate = DateTime.now();
+      _emoji = '📦';
+      _emojiName = '箱子';
+    }
+  }
 
   @override
   void dispose() {
@@ -38,11 +67,8 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePickerWheel(
-      context,
-      initialDate: _purchaseDate,
-    );
-    if (picked != null && mounted) setState(() => _purchaseDate = picked);
+    final result = await showLunarDatePicker(context, initialDate: _purchaseDate);
+    if (result != null && mounted) setState(() => _purchaseDate = result.solarDate);
   }
 
   Future<void> _pickEmoji() async {
@@ -58,7 +84,7 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     final equipment = Equipment(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: _isEditing ? widget.existing!.id : DateTime.now().millisecondsSinceEpoch.toString(),
       title: _titleCtrl.text.trim(),
       price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
       purchaseDate: _purchaseDate,
@@ -72,15 +98,12 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final cardColor = Theme.of(context).cardColor;
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          '添加物品',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: cs.onSurface,
-          ),
+          _isEditing ? '编辑物品' : '添加物品',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: cs.onSurface),
         ),
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, size: 20, color: cs.onSurface),
@@ -99,10 +122,9 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
                 child: Column(
                   children: [
                     Container(
-                      width: 80,
-                      height: 80,
+                      width: 80, height: 80,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
+                        color: cardColor,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: cs.outlineVariant),
                       ),
@@ -110,13 +132,7 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
                       child: Text(_emoji, style: const TextStyle(fontSize: 38)),
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      _emojiName,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
+                    Text(_emojiName, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                   ],
                 ),
               ),
@@ -124,9 +140,10 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
             const SizedBox(height: 24),
 
             // ── 名称 ──
-            _label('名称'),
+            buildLabel(context, '名称'),
             const SizedBox(height: 8),
-            _buildField(
+            buildFormField(
+              context: context,
               controller: _titleCtrl,
               hint: '请输入物品名称',
               validator: (v) => v == null || v.trim().isEmpty ? '请输入名称' : null,
@@ -134,9 +151,10 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
             const SizedBox(height: 20),
 
             // ── 价格 ──
-            _label('价格'),
+            buildLabel(context, '价格'),
             const SizedBox(height: 8),
-            _buildField(
+            buildFormField(
+              context: context,
               controller: _priceCtrl,
               hint: '¥ 请输入价格',
               keyboardType: TextInputType.number,
@@ -150,18 +168,22 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
             const SizedBox(height: 20),
 
             // ── 购买日期 ──
-            _label('购买日期'),
+            buildLabel(context, '购买日期'),
             const SizedBox(height: 8),
-            _buildDateField(),
+            buildDateField(
+              context,
+              '${_purchaseDate.year}-${_purchaseDate.month.toString().padLeft(2, '0')}-${_purchaseDate.day.toString().padLeft(2, '0')}',
+              _pickDate,
+            ),
             const SizedBox(height: 20),
 
             // ── 备注 ──
-            _label('备注'),
+            buildLabel(context, '备注'),
             const SizedBox(height: 8),
-            _buildField(controller: _notesCtrl, hint: '选填，物品备注信息', maxLines: 3),
+            buildFormField(context: context, controller: _notesCtrl, hint: '选填，物品备注信息', maxLines: 3),
             const SizedBox(height: 32),
 
-            // ── 添加按钮 ──
+            // ── 按钮 ──
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -170,99 +192,18 @@ class _AddEquipmentPageState extends State<_AddEquipmentPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   elevation: 0,
                 ),
-                child: const Text(
-                  '添加',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                child: Text(
+                  _isEditing ? '保存修改' : '添加',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _label(String text) {
-    final cs = Theme.of(context).colorScheme;
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: cs.onSurface,
-      ),
-    );
-  }
-
-  Widget _buildDateField() {
-    final cs = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: _pickDate,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.outlineVariant),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.calendar_today, size: 18, color: cs.onSurfaceVariant),
-            const SizedBox(width: 10),
-            Text(
-              '${_purchaseDate.year}-${_purchaseDate.month.toString().padLeft(2, '0')}-${_purchaseDate.day.toString().padLeft(2, '0')}',
-              style: TextStyle(fontSize: 15, color: cs.onSurface),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildField({
-    required TextEditingController controller,
-    required String hint,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    String? Function(String?)? validator,
-    int maxLines = 1,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
-      maxLines: maxLines,
-      style: TextStyle(color: cs.onSurface, fontSize: 15),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
-        filled: true,
-        fillColor: Theme.of(context).cardColor,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: cs.outlineVariant),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: cs.outlineVariant),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: cs.primary, width: 1.5),
-        ),
-      ),
-      validator: validator,
     );
   }
 }

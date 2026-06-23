@@ -101,7 +101,7 @@ class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
       builder: (ctx) {
         final cs = Theme.of(ctx).colorScheme;
         return AlertDialog(
-          backgroundColor: Theme.of(ctx).dialogTheme.backgroundColor ?? Colors.white,
+          backgroundColor: Theme.of(ctx).dialogTheme.backgroundColor ?? cs.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
           content: Column(

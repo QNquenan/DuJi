@@ -16,6 +16,7 @@ class AppSettings {
   final SortMode sortMode;
   final CountdownSortMode countdownSortMode;
   final bool countdownIncludeStartDay;
+  final bool sortAscending;
 
   const AppSettings({
     this.theme = ThemeOption.light,
@@ -23,6 +24,7 @@ class AppSettings {
     this.sortMode = SortMode.created,
     this.countdownSortMode = CountdownSortMode.created,
     this.countdownIncludeStartDay = false,
+    this.sortAscending = false,
   });
 
   ThemeMode get themeMode {
@@ -42,6 +44,7 @@ class AppSettings {
     SortMode? sortMode,
     CountdownSortMode? countdownSortMode,
     bool? countdownIncludeStartDay,
+    bool? sortAscending,
   }) =>
       AppSettings(
         theme: theme ?? this.theme,
@@ -49,6 +52,7 @@ class AppSettings {
         sortMode: sortMode ?? this.sortMode,
         countdownSortMode: countdownSortMode ?? this.countdownSortMode,
         countdownIncludeStartDay: countdownIncludeStartDay ?? this.countdownIncludeStartDay,
+        sortAscending: sortAscending ?? this.sortAscending,
       );
 
   Map<String, dynamic> toJson() => {
@@ -57,6 +61,7 @@ class AppSettings {
     'sortMode': sortMode.name,
     'countdownSortMode': countdownSortMode.name,
     'countdownIncludeStartDay': countdownIncludeStartDay,
+    'sortAscending': sortAscending,
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -77,6 +82,7 @@ class AppSettings {
       orElse: () => CountdownSortMode.created,
     ),
     countdownIncludeStartDay: json['countdownIncludeStartDay'] as bool? ?? false,
+    sortAscending: json['sortAscending'] as bool? ?? false,
   );
 }
 
@@ -91,8 +97,10 @@ class AppSettingsNotifier extends ValueNotifier<AppSettings> {
     final raw = prefs.getString(_key);
     if (raw != null) {
       try {
-        final map = _parseJson(raw);
-        if (map != null) value = AppSettings.fromJson(map);
+        final decoded = jsonDecode(raw);
+        if (decoded is Map<String, dynamic>) {
+          value = AppSettings.fromJson(decoded);
+        }
       } catch (_) {}
     }
   }
@@ -100,19 +108,7 @@ class AppSettingsNotifier extends ValueNotifier<AppSettings> {
   Future<void> update(AppSettings newValue) async {
     value = newValue;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, _toJsonString(newValue));
-  }
-
-  static Map<String, dynamic>? _parseJson(String raw) {
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) return decoded;
-    } catch (_) {}
-    return null;
-  }
-
-  static String _toJsonString(AppSettings s) {
-    return jsonEncode(s.toJson());
+    await prefs.setString(_key, jsonEncode(newValue.toJson()));
   }
 }
 
